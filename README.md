@@ -80,7 +80,6 @@ server-id = 1
 port=3307
 datadir=/var/lib/mysql-replica01
 socket=/var/lib/mysql-replica01/mysql.sock
-# Disabling symbolic-links is recommended to prevent assorted security risks
 symbolic-links=0
 log-error=/var/log/mysqld-replica01.log
 pid-file=/var/run/mysqld-replica01/mysqld.pid
@@ -95,7 +94,6 @@ server-id = 2
 port=3308
 datadir=/var/lib/mysql_slave
 socket=/var/lib/mysql-replica02/mysql.sock
-# Disabling symbolic-links is recommended to prevent assorted security risks
 symbolic-links=0
 log-bin=mysql-bin
 log-error=/var/log/mysqld-replica02.log
