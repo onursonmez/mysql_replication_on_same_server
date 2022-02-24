@@ -87,8 +87,11 @@ log-bin=mysql-bin
 innodb_flush_log_at_trx_commit=1
 sync_binlog=1
 binlog-format=ROW
+```
+
 Şimdi ise Slave instance kuralım.
 
+```
 [mysqld@replica02]
 server-id = 2
 port=3308
