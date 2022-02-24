@@ -15,12 +15,13 @@ sudo rpm -ivh mysql57-community-release-el7-9.noarch.rpm
 MySQL Kurulumu:
 Kurulumu başlatmak için
 
-sudo yum install mysql-server
+```sudo yum install mysql-server```
 Servis durumunu görüntülemek için aşağıdaki komutları çalıştırın ve Active: active (running) yazısını görün.
 
+```
 sudo systemctl start mysqld
 sudo systemctl status mysqld
-
+```
 
 MySQL kurulumu sırasında root hesabı için geçici bir şifre üretilecektir. Bu şifreye ulaşabilmek için
 
