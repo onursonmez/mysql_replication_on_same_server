@@ -8,59 +8,51 @@ MySQL resmi web sayfasına giderek istediğiniz sürümdeki rpm’i sunucunuza i
 
 https://dev.mysql.com/downloads/repo/yum/ üzerinden ilgili sürümü belirleyin ve linkini kopyalayın.
 
-1
-2
 wget https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
 sudo rpm -ivh mysql57-community-release-el7-9.noarch.rpm
- 
+
 
 MySQL Kurulumu:
 Kurulumu başlatmak için
 
-1
 sudo yum install mysql-server
 Servis durumunu görüntülemek için aşağıdaki komutları çalıştırın ve Active: active (running) yazısını görün.
 
-1
-2
 sudo systemctl start mysqld
 sudo systemctl status mysqld
- 
+
 
 MySQL kurulumu sırasında root hesabı için geçici bir şifre üretilecektir. Bu şifreye ulaşabilmek için
 
-1
 sudo grep 'temporary password' /var/log/mysqld.log
- 
+
 
 Örnek sonuç:
 
 [Note] A temporary password is generated for root@localhost: mqRsFsJd_3Xk>r
 
- 
+
 
 Default root parolasını değiştirmeniz için
 
-1
 sudo mysql_secure_installation
- 
+
 
 MySQL sunucuna bağlanmak için:
 
-1
 mysqladmin -u root -p version
- 
+
 
 Buraya kadar herhangi bir hata almazsanız herşey yolunda demektir. MySQL sunucusu başarılı bir şekilde kuruldu.
 
- 
+
 
 MySQL Database’ler Arası Replikasyon
- 
+
 
 MySQL eski sürümlerinde replikasyonun konfigürasyon aşamalarından biri mysqld_multi komutuydu fakat yeni sürümü ile birlikte bu komut kullanım maksadı kalktı çünkü MySQL o işlemleri kendisi yapabilir hale geldi nasıl olduğundan bahsedeceğim. Bunu özlellikle belirtiyorum çünkü araştırdığınız zaman mysqld_multi işlemleri yapmanız gerektiğini eski makalelerde göreceksiniz vakit kaybına sebep olmasın.
 
- 
+
 
 Replikasyon sürecini başlatmak için en önemli nokta /etc/my.cnf dosyasının konfigürasyonudur. Burada ilk bakıldığında default instance vardır ve port 3306’dır, port önemli çünkü aynı sunucu üzerinde çalıştığımız için 127.0.0.1 sunucunsundaki hangi instance’a bağlanacağımızı port aracılığı ile belirteceğiz.
 
@@ -70,12 +62,7 @@ Instance oluşturmak için [example] ile başlayacağız ve gerekli parametreler
 
 Örneğin aşağidaki konf default’a aittir :
 
-1
-2
-3
-4
-5
-6
+
 [mysqld]
 port=3306
 datadir=/var/lib/mysql
@@ -88,19 +75,6 @@ Port gibi önemli noktalardan bir diğeri ise server-id, replikasyon aşamasınd
 
 O zaman Master instance’ımızı kuralım.
 
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
 [mysqld@replica01]
 server-id = 1
 port=3307
@@ -116,19 +90,6 @@ sync_binlog=1
 binlog-format=ROW
 Şimdi ise Slave instance kuralım.
 
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
 [mysqld@replica02]
 server-id = 2
 port=3308
@@ -142,57 +103,38 @@ pid-file=/var/run/mysqld-replica02/mysqld.pid
 wait_timeout = 28800
 interactive_timeout = 28800
 max_allowed_packet  = 256M
- 
+
 
 Her iki instance ile ilgili config ayarlarını yaptıktan sonra systemctl restart mysqld komutunu çalıştırın.
 
-1
-2
-3
 systemctl status mysqld@replica01
- 
 systemctl status mysqld@replica02
+
 komutları ile sağlık durumlarını kontrol edin.
 
 Bu aşamadan sonra instance’larımıza ayrı ayrı bağlanıp işlemlerimizi yapacağız.
 
- 
 
 İlk olarak mysqld@replica01 için bağlanıyoruz
 
- 
-
-1
 mysql -u root -p --host=127.0.0.1 --port=3307
 Replication için yeni bir kullanıcı oluştur
 
-1
-2
 mysql> CREATE USER 'replication'@'%' IDENTIFIED BY 'replication';
 mysql> GRANT REPLICATION SLAVE ON *.* TO 'replication'@'%';
 Instance01’de çık
 
 Master Instance’ının dump dosyasını oluştur
 
-1
 mysqldump -u root -p --host=127.0.0.1 --port=3307 --all-databases --master-data=2 > replicationdump.sql
 Oluşturduğumuz master dump dosyasını slave üzerine import et
 
-1
 mysql -u root -p --host=127.0.0.1 --port=3308 < replicationdump.sql
 Slave Instace’a bağlan
 
-1
 mysql -u root -p --host=127.0.0.1 --port=3308
 Aşağıdaki Master bilgilerini gir
 
-1
-2
-3
-4
-5
-6
-7
 mysql> CHANGE MASTER TO
 -> MASTER_HOST='127.0.0.1',
 -> MASTER_USER='replication',
@@ -200,26 +142,20 @@ mysql> CHANGE MASTER TO
 -> MASTER_PORT='3307',
 -> MASTER_LOG_FILE='mysql-bin.000001',
 -> MASTER_LOG_POS=349;
- 
+
 
 Replikasyonu başlatmak için
 
-1
 mysql> START SLAVE;
 Replikasyonu kontrol etmek için
 
-1
 mysql> SHOW SLAVE STATUS \G
 Bu sayede aynı MySQL sunucumuz üzerinde farklı instance’lar oluştururarak replikasyonu başlatmış oluyoruz. Master içerisindeki tüm DB hareketleri anında Slave üzerinde de oluştuğunu görebilirsiniz.
 
 Master üzerinde aşağıdaki komutu çalıştırıp
 
-1
 Mysql> Create database test;
 Slave üzerinde aynı database’in oluştuğunu görebilirsiniz.
 
-1
 Mysql> Show databases;
 Ayrıca MySQL Workbench ile de Database yönetiminizi görsel arayüz ile de sağlayabilirsiniz.
-
-Umarım faydalı olur, teşekkürler.
